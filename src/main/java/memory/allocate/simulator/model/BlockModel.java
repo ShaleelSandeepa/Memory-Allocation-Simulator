@@ -1,10 +1,13 @@
 package memory.allocate.simulator.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class BlockModel {
 
     private int blockId;
     private int size;
-    private int[] processIds;
+    private List<Integer> processIds;
     private boolean isAllocated;
     private boolean isFull;
     private int usedSize;
@@ -12,7 +15,7 @@ public class BlockModel {
     public BlockModel(int blockId, int size) {
         this.blockId = blockId;
         this.size = size;
-        this.processIds = new int[size];
+        this.processIds = new ArrayList<>();
         this.isAllocated = false;
         this.isFull = false;
         this.usedSize = 0;
@@ -34,11 +37,11 @@ public class BlockModel {
         this.size = size;
     }
 
-    public int[] getProcessIds() {
+    public List<Integer> getProcessIds() {
         return processIds;
     }
 
-    public void setProcessIds(int[] processIds) {
+    public void setProcessIds(List<Integer> processIds) {
         this.processIds = processIds;
     }
 
