@@ -3,101 +3,51 @@ package memory.allocate.simulator.gui;
 import memory.allocate.simulator.MainServer;
 
 import javax.swing.*;
-import javax.swing.border.EtchedBorder;
+import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
 public class SimulatorGUI extends JFrame {
 
-    private MainServer mainServer = null;
-    private JPanel jContentPane = null;
-    private JPanel mainPanel = null;
-    private JPanel jPanel = null;
-    private JPanel jPanel1 = null;
-    private JPanel jPanel2 = null;
+    private MainServer mainServer;
 
-    private JPanel inputPanel = null;
+    // GUI Components
+    private JTextField jobNameField;
+    private JTextField jobSizeField;
+    private DefaultTableModel tableModel;
 
-
-
-    private JPanel getJContentPane() {
-        if (jContentPane == null) {
-            GridLayout gridLayout = new GridLayout();
-            gridLayout.setRows(1);
-            jContentPane = new JPanel();
-            jContentPane.setLayout(gridLayout);
-            jContentPane.add(getMainPanel(), null);
-        }
-        return jContentPane;
+    public SimulatorGUI() {
+        initialize();
     }
 
-    private JPanel getMainPanel() {
-        if (mainPanel == null) {
-            GridLayout gridLayout1 = new GridLayout();
-            gridLayout1.setRows(1);
-            mainPanel = new JPanel();
-            mainPanel.setLayout(gridLayout1);
-            mainPanel.add(getJPanel(), null);
-        }
-        return mainPanel;
+    private void initialize() {
+        setTitle("Memory Allocation Simulator By Shaleel Sandeepa");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(1000, 600);
+        setLocationRelativeTo(null); // Centers the window
+        setLayout(new BorderLayout());
+
+        // Add main panels
+        add(createInputPanel(), BorderLayout.NORTH);
+        add(createMainContentPanel(), BorderLayout.CENTER);
+
+        setVisible(true);
     }
 
-    private JPanel getJPanel() {
-        if (jPanel == null) {
-            jPanel = new JPanel();
-            jPanel.setLayout(new BoxLayout(getJPanel(), BoxLayout.Y_AXIS));
-            jPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-            jPanel.add(getJPanel1(), null);
-        }
-        return jPanel;
-    }
-
-    private JPanel getJPanel1() {
-        if (jPanel1 == null) {
-            BorderLayout borderLayout = new BorderLayout();
-            borderLayout.setHgap(5);
-            borderLayout.setVgap(5);
-            jPanel1 = new JPanel();
-            jPanel1.setLayout(borderLayout);
-
-            // Add components to the panel
-            jPanel1.add(getInputPanel(), BorderLayout.NORTH); // Panel for input fields and buttons
-            jPanel1.add(getJobTablePanel(), BorderLayout.WEST); // Panel for the job table
-            jPanel1.add(getExecutionPanel(), BorderLayout.CENTER); // Panel for execution information
-            jPanel1.add(getStackPanel(), BorderLayout.EAST); // Panel for stack visualization
-
-            // Optional: Add a border to the panel itself
-            jPanel1.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
-        }
-        return jPanel1;
-    }
-
-
-    private JPanel getInputPanel() {
-
-        if (jPanel2 == null) {
-            BorderLayout borderLayout = new BorderLayout();
-            borderLayout.setHgap(5);
-            borderLayout.setVgap(5);
-            jPanel2 = new JPanel();
-            jPanel2.setLayout(borderLayout);
-            jPanel2.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-
-            jPanel2.add(getInputPanelInsidePanel(), BorderLayout.WEST); // Panel for input fields and buttons
-        }
-        return jPanel2;
-    }
-
-    private JPanel getInputPanelInsidePanel() {
+    private JPanel createInputPanel() {
         JPanel inputPanel = new JPanel();
-        inputPanel.setLayout(new FlowLayout());
-        inputPanel.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
+        inputPanel.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createEtchedBorder(),
+                "Add Job",
+                TitledBorder.CENTER,
+                TitledBorder.TOP
+        ));
 
         JLabel jobNameLabel = new JLabel("Job Name:");
-        JTextField jobNameField = new JTextField(20);
+        jobNameField = new JTextField(15);
 
         JLabel jobSizeLabel = new JLabel("Job Size:");
-        JTextField jobSizeField = new JTextField(5);
+        jobSizeField = new JTextField(10);
 
         JButton insertButton = new JButton("Insert Job");
         insertButton.addActionListener(e -> {
@@ -108,22 +58,69 @@ public class SimulatorGUI extends JFrame {
                 addJobToTable(jobName, jobSize, "Pending");
                 jobNameField.setText("");
                 jobSizeField.setText("");
+            } else {
+                JOptionPane.showMessageDialog(this, "Please fill out both fields.", "Input Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 
-        inputPanel.add(jobNameLabel);
-        inputPanel.add(jobNameField);
-        inputPanel.add(jobSizeLabel);
-        inputPanel.add(jobSizeField);
-        inputPanel.add(insertButton);
+        // Layout for input panel
+        GroupLayout layout = new GroupLayout(inputPanel);
+        inputPanel.setLayout(layout);
+        layout.setAutoCreateGaps(true);
+        layout.setAutoCreateContainerGaps(true);
+
+        layout.setHorizontalGroup(layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.TRAILING)
+                        .addComponent(jobNameLabel)
+                        .addComponent(jobSizeLabel))
+                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                        .addComponent(jobNameField)
+                        .addComponent(jobSizeField))
+                .addComponent(insertButton)
+        );
+
+        layout.setVerticalGroup(layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                        .addComponent(jobNameLabel)
+                        .addComponent(jobNameField))
+                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                        .addComponent(jobSizeLabel)
+                        .addComponent(jobSizeField)
+                        .addComponent(insertButton))
+        );
 
         return inputPanel;
     }
 
-    private JPanel getExecutionPanel() {
+    private JPanel createMainContentPanel() {
+        JPanel mainContentPanel = new JPanel(new BorderLayout());
+
+        // Add panels to the main content area
+        mainContentPanel.add(createJobTablePanel(), BorderLayout.WEST);
+        mainContentPanel.add(createExecutionPanel(), BorderLayout.CENTER);
+        mainContentPanel.add(createStackPanel(), BorderLayout.EAST);
+
+        return mainContentPanel;
+    }
+
+    private JPanel createJobTablePanel() {
+        JPanel tablePanel = new JPanel(new BorderLayout());
+        tablePanel.setBorder(BorderFactory.createTitledBorder("Job Table"));
+
+        String[] columnNames = {"Name", "Size", "Status"};
+        tableModel = new DefaultTableModel(columnNames, 0);
+        JTable jobTable = new JTable(tableModel);
+
+        JScrollPane scrollPane = new JScrollPane(jobTable);
+        tablePanel.add(scrollPane, BorderLayout.CENTER);
+
+        return tablePanel;
+    }
+
+    private JPanel createExecutionPanel() {
         JPanel executionPanel = new JPanel();
         executionPanel.setBorder(BorderFactory.createTitledBorder("Execution Details"));
-        executionPanel.setLayout(new FlowLayout());
+        executionPanel.setLayout(new BoxLayout(executionPanel, BoxLayout.Y_AXIS));
 
         JLabel executionLabel = new JLabel("Execution Panel: Add custom execution logic here");
         executionPanel.add(executionLabel);
@@ -131,95 +128,103 @@ public class SimulatorGUI extends JFrame {
         return executionPanel;
     }
 
-
-    // Panel for the job table
-    private JPanel getJobTablePanel() {
-        JPanel tablePanel = new JPanel(new BorderLayout());
-
-        String[] columnNames = {"Name", "Size", "Status"};
-        Object[][] data = {};
-        JTable jobTable = new JTable(new DefaultTableModel(data, columnNames));
-        JScrollPane scrollPane = new JScrollPane(jobTable);
-
-        tablePanel.add(scrollPane, BorderLayout.CENTER);
-
-        // Store table model for later updates
-        jobTable.setName("jobTable"); // Optional: Name for identification
-
-        return tablePanel;
-    }
-
-    // Add a job to the job table
-    private void addJobToTable(String name, String size, String status) {
-        JTable jobTable = getTableFromPanel(jPanel1, "jobTable");
-        DefaultTableModel model = (DefaultTableModel) jobTable.getModel();
-        model.addRow(new Object[]{name, size, status});
-    }
-
-    // Retrieve JTable from the panel using the name
-    private JTable getTableFromPanel(Container panel, String tableName) {
-        for (Component component : panel.getComponents()) {
-            if (component instanceof JScrollPane) {
-                Component view = ((JScrollPane) component).getViewport().getView();
-                if (view instanceof JTable && tableName.equals(view.getName())) {
-                    return (JTable) view;
-                }
-            } else if (component instanceof Container) {
-                JTable table = getTableFromPanel((Container) component, tableName);
-                if (table != null) {
-                    return table;
-                }
-            }
-        }
-        return null;
-    }
-
-
-    // Panel for stack visualization
-    private JPanel getStackPanel() {
+    private JPanel createStackPanel() {
         JPanel stackPanel = new JPanel();
-        stackPanel.setLayout(new BoxLayout(stackPanel, BoxLayout.Y_AXIS));
         stackPanel.setBorder(BorderFactory.createTitledBorder("Stack Visualization"));
+        stackPanel.setLayout(new BoxLayout(stackPanel, BoxLayout.Y_AXIS));
+        stackPanel.setPreferredSize(new Dimension(400, 0)); // Increased width of the stack panel
 
-        // Example block representation
-        int[] blockSizes = {50, 30, 20, 40}; // Sample block sizes
+        String[][] blockData = {
+                {"50", "Allocated", "75"},
+                {"30", "Free", "33"},
+                {"20", "Full", "100"},
+                {"40", "Free", "0"}
+        };
 
-        for (int blockSize : blockSizes) {
-            JLabel block = new JLabel("Block Size: " + blockSize);
-            block.setOpaque(true);
-//            block.setBackground(Color.BLUE);
-            block.setForeground(Color.BLUE);
-            block.setPreferredSize(new Dimension(100, blockSize));
-            block.setHorizontalAlignment(SwingConstants.CENTER);
-            stackPanel.add(block);
+        for (String[] data : blockData) {
+            String blockSize = data[0];
+            String blockStatus = data[1];
+            int fillPercentage = Integer.parseInt(data[2]);
+
+            // Create a container panel for each block
+            JPanel blockContainer = new JPanel();
+            blockContainer.setLayout(new BorderLayout());
+            blockContainer.setPreferredSize(new Dimension(350, 50)); // Width: 350px, Height: 50px (static height)
+            blockContainer.setMaximumSize(new Dimension(350, 50));
+
+            // Create size label (left side)
+            JLabel sizeLabel = new JLabel("Size: " + blockSize, SwingConstants.LEFT);
+            sizeLabel.setPreferredSize(new Dimension(70, 50)); // Fixed width for size label
+            sizeLabel.setHorizontalAlignment(SwingConstants.LEFT);
+
+            // Create block panel (center) using JLayeredPane for layering
+            JLayeredPane block = new JLayeredPane();
+            block.setPreferredSize(new Dimension(200, 50));
+            block.setBorder(BorderFactory.createLineBorder(Color.BLACK)); // Add a border for visibility
+
+            // Add inner padding container
+            JPanel paddingPanel = new JPanel();
+            paddingPanel.setLayout(null); // Absolute positioning for children
+            paddingPanel.setBounds(5, 5, 200, 40); // Leave a 5px padding on all sides
+            paddingPanel.setBackground(Color.LIGHT_GRAY); // Optional: Background color for visibility
+
+            // Filled portion
+            JPanel filledPanel = new JPanel();
+            filledPanel.setBackground(Color.GREEN); // Color for the filled portion
+            filledPanel.setBounds(0, 0, (int) (200 * (fillPercentage / 100.0)), 40); // Adjust width based on inner padding
+            paddingPanel.add(filledPanel);
+
+            // Percentage label on top of the block
+            JLabel fillLabel = new JLabel(fillPercentage + "%", SwingConstants.CENTER);
+            fillLabel.setBounds(0, 0, 200, 50); // Centered inside the padding panel
+            fillLabel.setHorizontalAlignment(SwingConstants.CENTER);
+            fillLabel.setVerticalAlignment(SwingConstants.CENTER);
+            filledPanel.add(fillLabel, Integer.valueOf(1)); // Add fill label to filled panel
+
+            block.add(paddingPanel, Integer.valueOf(0)); // Add padding panel to block
+
+            // Create status label (right side)
+            JLabel statusLabel = new JLabel(blockStatus, SwingConstants.RIGHT);
+            statusLabel.setPreferredSize(new Dimension(70, 50)); // Fixed width for status label
+            statusLabel.setHorizontalAlignment(SwingConstants.LEFT);
+
+
+            if (statusLabel.getText().equals("Allocated")) {
+                statusLabel.setForeground(Color.BLUE);
+            } else if (statusLabel.getText().equals("Free")) {
+                statusLabel.setForeground(Color.GREEN);
+            } else if (statusLabel.getText().equals("Full")) {
+                statusLabel.setForeground(Color.RED);
+            }
+
+            // Add components to the container
+            blockContainer.add(sizeLabel, BorderLayout.WEST);
+            blockContainer.add(block, BorderLayout.CENTER);
+            blockContainer.add(statusLabel, BorderLayout.EAST);
+
+            // Add spacing between blocks
+            stackPanel.add(Box.createVerticalStrut(10));
+            stackPanel.add(blockContainer);
         }
 
         return stackPanel;
     }
 
 
-    public void loadGui(MainServer mainServer){
-        this.mainServer=mainServer;
-        initialize();
-//        loadData();
+
+
+
+
+
+    private void addJobToTable(String name, String size, String status) {
+        tableModel.addRow(new Object[]{name, size, status});
     }
 
-    private void initialize() {
-        this.setSize(600, 600);
-
-        Toolkit tk=this.getToolkit();
-        Dimension dm=tk.getScreenSize();
-
-        this.setLocation(((dm.width-600)/2), ((dm.height-600)/2));
-        this.setContentPane(getJContentPane());
-        this.setTitle("Memory Allocation Simulator By Shaleel Sandeepa ");
-        this.setVisible(true);
-        this.addWindowListener(new java.awt.event.WindowAdapter() {
-            public void windowClosing(java.awt.event.WindowEvent e) {
-                System.out.println("Simulator Stopped.");
-                System.exit(0);
-            }
-        });
+    public void loadGui(MainServer mainServer) {
+        this.mainServer = mainServer;
     }
 
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(SimulatorGUI::new);
+    }
 }
