@@ -13,7 +13,9 @@ public class AllocatorService {
     private static List<JobModel> jobModelList;
     private static List<BlockModel> blockModelList;
     private static String id;
+    private static int availableSize;
     private static int progress;
+    private static final Color GREEN = new Color(0, 210, 0);
 
     public static void allocateJob(List<JobModel> jobs, List<BlockModel> blocks,
                                    DefaultTableModel tableModel, JPanel executionPanel, JPanel stackPanel) throws InterruptedException {
@@ -27,6 +29,8 @@ public class AllocatorService {
 
         new Thread(() -> {
             try {
+                setExecutionMessage(executionPanel, "Simulation started !");
+                setExecutionMessage(executionPanel, "<html><br></html>");
                 int currentBlockIndex = 0; // Start with the first block
                 for (JobModel job : jobModelList) {
                     if (!job.isDone()) {
@@ -35,6 +39,7 @@ public class AllocatorService {
                         // Iterate through blocks, starting from the current index
                         for (int i = 0; i < blockModelList.size(); i++) {
                             BlockModel block = blockModelList.get(currentBlockIndex);
+                            setExecutionMessage(executionPanel, "Checking if "+job.getJobName()+" is fits into the Block " + block.getBlockId()+"...");
 
                             // Check if the job fits into the block
                             if (!block.isFull() && (block.getSize() - block.getUsedSize() >= job.getSize())) {
@@ -46,15 +51,26 @@ public class AllocatorService {
 
                                 job.setBlockId(block.getBlockId()); // Assign block ID to job
                                 job.setDone(true); // Mark job as done
+
                                 setExecutionMessage(executionPanel, job.getJobName() + " allocated to " + block.getBlockId());
 
                                 // Check if the block is now full
                                 if (block.getSize() - block.getUsedSize() == 0) {
                                     block.setFull(true);
-                                    setExecutionMessage(executionPanel, block.getBlockId() + " is now full.");
+                                    setExecutionMessage(executionPanel, "Block "+block.getBlockId() + " is now full.");
                                 }
+                                setExecutionMessage(executionPanel, "<html><br></html>");
 
                                 updateProgressBar(stackPanel, block); // Update progress bar
+                                // Update the table model to reflect the job is "Complete"
+                                SwingUtilities.invokeLater(() -> {
+                                    for (int row = 0; row < tableModel.getRowCount(); row++) {
+                                        if ((int) tableModel.getValueAt(row, 0) == job.getJobId()) {
+                                            tableModel.setValueAt("Completed", row, 3);
+                                            break;
+                                        }
+                                    }
+                                });
                                 allocated = true;
                                 break;
                             }
@@ -68,7 +84,15 @@ public class AllocatorService {
                         }
                     }
                 }
+                setExecutionMessage(executionPanel, "<html><br></html>");
+                setExecutionMessage(executionPanel, "Simulation stopped !");
             } catch (InterruptedException ex) {
+                try {
+                    setExecutionMessage(executionPanel, "<html><br></html>");
+                    setExecutionMessage(executionPanel, "Simulation stopped !");
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
                 ex.printStackTrace();
             }
         }).start();
@@ -87,6 +111,7 @@ public class AllocatorService {
                                     JProgressBar progressBar = (JProgressBar) component3;
                                     if (!progressBar.getName().isEmpty()  && progressBar.getName().equals(String.valueOf(blockModel.getBlockId()))) {
                                         id = progressBar.getName();
+                                        availableSize = blockModel.getSize() - blockModel.getUsedSize();
                                         progress = (int) ((double) blockModel.getUsedSize() / blockModel.getSize() * 100);
                                         progressBar.setValue(progress);
 
@@ -107,8 +132,8 @@ public class AllocatorService {
                                     statusLabel.setText("   Empty");
                                     statusLabel.setForeground(Color.BLUE);
                                 } else if (progress < 100) {
-                                    statusLabel.setText("   Allocated");
-                                    statusLabel.setForeground(new Color(0, 190, 0)); // Dark green
+                                    statusLabel.setText("<html>&nbsp;&nbsp;&nbsp;&nbsp;Allocated<br>&nbsp;&nbsp;&nbsp;&nbsp;[available: " + availableSize + "]</html>");
+                                    statusLabel.setForeground(GREEN); // Dark green
                                 } else if (progress == 100) {
                                     statusLabel.setText("   Full");
                                     statusLabel.setForeground(Color.RED);
@@ -128,13 +153,14 @@ public class AllocatorService {
         }
     }
 
-    private static void setExecutionMessage(JPanel executionPanel, String result) {
+    private static void setExecutionMessage(JPanel executionPanel, String result) throws InterruptedException {
         SwingUtilities.invokeLater(() -> {
             JLabel executionLabel = new JLabel(result);
             executionPanel.add(executionLabel);
             executionPanel.revalidate();
             executionPanel.repaint();
         });
+        Thread.sleep(1000);
     }
 }
 

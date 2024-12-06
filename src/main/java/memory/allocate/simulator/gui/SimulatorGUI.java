@@ -86,52 +86,86 @@ public class SimulatorGUI extends JFrame {
         // Inside createInputPanel() method
         JButton resetButton = new JButton("Reset");
         resetButton.addActionListener(e -> {
-            // Step 1: Clear the job list and block list
-            if (jobs != null) {
-                jobs.clear();
-            }
-            if (blocks != null) {
-                for (BlockModel block : blocks) {
-                    block.setUsedSize(0);
-                    block.setFull(false); // Reset block to empty
-                }
-            }
-
-            // Step 2: Clear the job table
-            tableModel.setRowCount(0);
-
-            // Step 3: Reset execution panel
-            if (executionPanel != null) {
-                for (Component component : executionPanel.getComponents()) {
-                    if (component instanceof JLabel) {
-                        executionPanel.remove(component); // Remove JLabel components
-                    }
-                }
-                executionPanel.revalidate();
-                executionPanel.repaint();
-            }
-
-            // Step 4: Reset stack panel (remove old components and recreate)
-            stackPanel.removeAll();
-            createStackPanel(); // Recreate the stack panel with default blocks
-
-            // Step 5: Reset job name and size fields
+            // Reset text fields
             jobNameField.setText("");
             jobSizeField.setText("");
 
-            // Step 6: Remove the current main content panel
-            remove(mainContentPanel);  // Remove the existing content pane
+            // Reset job list and table
+            jobs.clear();
+            tableModel.setRowCount(0);
 
-            // Step 7: Recreate and add the main content panel again
-            mainContentPanel = createMainContentPanel();
-            add(mainContentPanel, BorderLayout.CENTER);
+            // Reset block statuses
+            stackPanel.removeAll(); // Clear existing block panels
+            blocks.clear();
 
-            // Ensure the GUI is updated after resetting
-            revalidate();
-            repaint();
+            // Reinitialize blocks
+            blocks.add(new BlockModel(1, 128));
+            blocks.add(new BlockModel(2, 128));
+            blocks.add(new BlockModel(3, 512));
+            blocks.add(new BlockModel(4, 256));
+            blocks.add(new BlockModel(5, 1024));
+
+            // Recreate the stack panel UI
+            for (BlockModel blockModel : blocks) {
+                int blockSize = blockModel.getSize();
+                boolean isFull = blockModel.isFull();
+                String blockStatus = "Empty";
+
+                // Create a container panel for each block
+                JPanel blockContainer = new JPanel();
+                blockContainer.setLayout(new BorderLayout());
+                blockContainer.setPreferredSize(new Dimension(350, 50));
+                blockContainer.setMaximumSize(new Dimension(400, 50));
+
+                // Create size label (left side)
+                JLabel sizeLabel = new JLabel("Size: " + blockSize, SwingConstants.LEFT);
+                sizeLabel.setPreferredSize(new Dimension(70, 50));
+                sizeLabel.setHorizontalAlignment(SwingConstants.LEFT);
+
+                // Create block panel (center)
+                JPanel block = new JPanel();
+                block.setLayout(new BorderLayout());
+                block.setPreferredSize(new Dimension(250, 50));
+                block.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
+
+                // Create a JProgressBar
+                JProgressBar progressBar = new JProgressBar(0, 100);
+                progressBar.setName(String.valueOf(blockModel.getBlockId()));
+                progressBar.setValue(0);
+                progressBar.setStringPainted(true);
+                progressBar.setBackground(Color.WHITE);
+                progressBar.setForeground(Color.GREEN);
+                progressBar.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+                block.add(progressBar, BorderLayout.CENTER);
+
+                // Create status label (right side)
+                JLabel statusLabel = new JLabel("   Empty", SwingConstants.RIGHT);
+                statusLabel.setName(String.valueOf(blockModel.getBlockId()));
+                statusLabel.setPreferredSize(new Dimension(120, 100));
+                statusLabel.setHorizontalAlignment(SwingConstants.LEFT);
+                statusLabel.setForeground(Color.BLUE);
+
+                // Add components to the container
+                blockContainer.add(sizeLabel, BorderLayout.WEST);
+                blockContainer.add(block, BorderLayout.CENTER);
+                blockContainer.add(statusLabel, BorderLayout.EAST);
+
+                // Add spacing between blocks
+                stackPanel.add(Box.createVerticalStrut(10));
+                stackPanel.add(blockContainer);
+            }
+
+            // Repaint stack panel
+            stackPanel.revalidate();
+            stackPanel.repaint();
+
+            // Reset execution panel
+            executionPanel.removeAll();
+            executionPanel.revalidate();
+            executionPanel.repaint();
+
+            JOptionPane.showMessageDialog(this, "UI has been reset to initial state.", "Reset", JOptionPane.INFORMATION_MESSAGE);
         });
-
-
 
 
         JButton exampleJobsButton = new JButton("Example Jobs");
@@ -203,7 +237,7 @@ public class SimulatorGUI extends JFrame {
         JPanel tablePanel = new JPanel(new BorderLayout());
         tablePanel.setBorder(BorderFactory.createTitledBorder("Job Table"));
 
-        String[] columnNames = {"Name", "Size", "Status"};
+        String[] columnNames = {"Job Id", "Name", "Size", "Status"};
         tableModel = new DefaultTableModel(columnNames, 0);
         JTable jobTable = new JTable(tableModel);
 
@@ -214,10 +248,17 @@ public class SimulatorGUI extends JFrame {
     }
 
     private JPanel createExecutionPanel() {
-        executionPanel = new JPanel();
-        executionPanel.setBorder(BorderFactory.createTitledBorder("Execution"));
-        executionPanel.setLayout(new BoxLayout(executionPanel, BoxLayout.Y_AXIS));
+        // Outer panel with its own BoxLayout
+        JPanel executionPanelOuter = new JPanel();
+        executionPanelOuter.setBorder(BorderFactory.createTitledBorder("Execution"));
+        executionPanelOuter.setLayout(new BorderLayout()); // Separate BoxLayout
 
+        // Inner panel for scrollable content
+        executionPanel = new JPanel();
+        executionPanel.setLayout(new BoxLayout(executionPanel, BoxLayout.Y_AXIS));
+        JScrollPane scrollPane = new JScrollPane(executionPanel);
+
+        // Execute button
         JButton executeButton = new JButton("Execute All Jobs");
         executeButton.addActionListener(e -> {
             try {
@@ -227,10 +268,13 @@ public class SimulatorGUI extends JFrame {
             }
         });
 
-        executionPanel.add(executeButton);
+        // Add button and scroll pane to outer panel
+        executionPanelOuter.add(executeButton, BorderLayout.NORTH);
+        executionPanelOuter.add(scrollPane, BorderLayout.CENTER);
 
-        return executionPanel;
+        return executionPanelOuter;
     }
+
 
     private JPanel createStackPanel() {
         stackPanel = new JPanel();
@@ -260,7 +304,7 @@ public class SimulatorGUI extends JFrame {
             JPanel blockContainer = new JPanel();
             blockContainer.setLayout(new BorderLayout());
             blockContainer.setPreferredSize(new Dimension(350, 50));
-            blockContainer.setMaximumSize(new Dimension(350, 50));
+            blockContainer.setMaximumSize(new Dimension(400, 50));
 
             // Create size label (left side)
             JLabel sizeLabel = new JLabel("Size: " + blockSize, SwingConstants.LEFT);
@@ -270,7 +314,8 @@ public class SimulatorGUI extends JFrame {
             // Create block panel (center) using JLayeredPane for layering
             JPanel block = new JPanel();
             block.setLayout(new BorderLayout());
-            block.setPreferredSize(new Dimension(200, 50));
+            block.setPreferredSize(new Dimension(250, 50));
+            block.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
 
             // Set the text color of the percentage to black
             UIManager.put("ProgressBar.selectionForeground", Color.BLACK);
@@ -281,15 +326,15 @@ public class SimulatorGUI extends JFrame {
             progressBar.setName(String.valueOf(blockModel.getBlockId()));
             progressBar.setValue(fillPercentage);
             progressBar.setStringPainted(true);
-            progressBar.setForeground(Color.BLACK);
-            progressBar.setBackground(Color.LIGHT_GRAY);
+            progressBar.setBackground(Color.WHITE);
             progressBar.setForeground(GREEN);
+            progressBar.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
             block.add(progressBar, BorderLayout.CENTER);
 
             // Create status label (right side)
             statusLabel = new JLabel("   "+blockStatus, SwingConstants.RIGHT);
             statusLabel.setName(String.valueOf(blockModel.getBlockId()));
-            statusLabel.setPreferredSize(new Dimension(70, 50));
+            statusLabel.setPreferredSize(new Dimension(120, 100));
             statusLabel.setHorizontalAlignment(SwingConstants.LEFT);
 
             // Add components to the container
@@ -322,7 +367,7 @@ public class SimulatorGUI extends JFrame {
 
 
     private void addJobToTable(JobModel jobModel) {
-        tableModel.addRow(new Object[]{jobModel.getJobName(), jobModel.getSize(), "Pending", jobModel.getJobId()});
+        tableModel.addRow(new Object[]{jobModel.getJobId(), jobModel.getJobName(), jobModel.getSize(), "Pending..."});
         jobs.add(jobModel);
         jobId++;
     }
