@@ -81,10 +81,10 @@ public class AllocatorService {
 
                         if (!allocated) {
                             setExecutionMessage(executionPanel, "Unable to allocate " + job.getJobName());
+                            setExecutionMessage(executionPanel, "<html><br></html>");
                         }
                     }
                 }
-                setExecutionMessage(executionPanel, "<html><br></html>");
                 setExecutionMessage(executionPanel, "Simulation stopped !");
             } catch (InterruptedException ex) {
                 try {

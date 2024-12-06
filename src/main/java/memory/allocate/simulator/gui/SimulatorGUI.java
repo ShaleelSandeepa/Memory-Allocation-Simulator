@@ -38,7 +38,7 @@ public class SimulatorGUI extends JFrame {
         setTitle("Memory Allocation Simulator using NEXT-FIT Algorithm | Developed By Shaleel Sandeepa");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1200, 600);
-        setLocationRelativeTo(null); // Centers the window
+        setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
         // Add main panels
@@ -74,8 +74,8 @@ public class SimulatorGUI extends JFrame {
             }
 
             try {
-                int size = Integer.parseInt(jobSize); // Validate that jobSize is numeric
-                addJobToTable(new JobModel(jobId, size, jobName)); // Pass the size as an integer
+                int size = Integer.parseInt(jobSize);
+                addJobToTable(new JobModel(jobId, size, jobName));
                 jobNameField.setText("");
                 jobSizeField.setText("");
             } catch (NumberFormatException ex) {
@@ -86,16 +86,13 @@ public class SimulatorGUI extends JFrame {
         // Inside createInputPanel() method
         JButton resetButton = new JButton("Reset");
         resetButton.addActionListener(e -> {
-            // Reset text fields
+
+            jobId = 1;
             jobNameField.setText("");
             jobSizeField.setText("");
-
-            // Reset job list and table
             jobs.clear();
             tableModel.setRowCount(0);
-
-            // Reset block statuses
-            stackPanel.removeAll(); // Clear existing block panels
+            stackPanel.removeAll();
             blocks.clear();
 
             // Reinitialize blocks
@@ -108,8 +105,6 @@ public class SimulatorGUI extends JFrame {
             // Recreate the stack panel UI
             for (BlockModel blockModel : blocks) {
                 int blockSize = blockModel.getSize();
-                boolean isFull = blockModel.isFull();
-                String blockStatus = "Empty";
 
                 // Create a container panel for each block
                 JPanel blockContainer = new JPanel();
@@ -127,6 +122,10 @@ public class SimulatorGUI extends JFrame {
                 block.setLayout(new BorderLayout());
                 block.setPreferredSize(new Dimension(250, 50));
                 block.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
+
+                // Set the text color of the percentage to black
+                UIManager.put("ProgressBar.selectionForeground", Color.BLACK);
+                UIManager.put("ProgressBar.selectionBackground", Color.BLACK);
 
                 // Create a JProgressBar
                 JProgressBar progressBar = new JProgressBar(0, 100);
