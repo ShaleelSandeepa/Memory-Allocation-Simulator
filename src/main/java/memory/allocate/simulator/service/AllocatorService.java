@@ -17,10 +17,21 @@ public class AllocatorService {
     private static int progress;
     private static final Color GREEN = new Color(0, 210, 0);
     private static boolean allocated;
+    private static boolean isStop = false;
     private static int currentBlockIndex = 0; // Start with the first block
+    private static final Object lock = new Object();
 
     public static void resetCurrentBlockIndex(int index) {
         currentBlockIndex = index;
+    }
+
+    public static void setIsStop(boolean isStopExecution) {
+        synchronized (lock) {
+            isStop = isStopExecution;
+            if (!isStop) {
+                lock.notifyAll(); // Resume thread if paused
+            }
+        }
     }
 
     public static void allocateJob(List<JobModel> jobs, List<BlockModel> blocks,
@@ -41,6 +52,11 @@ public class AllocatorService {
                 setExecutionMessage(executionPanel, "========== Simulation started ! ==========");
                 setExecutionMessage(executionPanel, "<html><br></html>");
                 for (JobModel job : jobModelList) {
+                    synchronized (lock) {
+                        while (isStop) {
+                            lock.wait(); // Pause thread when isStop is true
+                        }
+                    }
                     //check job is completed
                     String status = (String) tableModel.getValueAt(job.getJobId()-1, 3);
                     if (status.equals("Completed ✅") || status.equals("Canceled ❌")) {

@@ -17,6 +17,7 @@ public class SimulatorGUI extends JFrame {
     private MainServer mainServer;
     int jobId = 1;
     Color GREEN = new Color(0, 210, 0);
+    Color GREEN2 = new Color(0, 100, 0);
     List<JobModel> jobs = new ArrayList<>();
     List<BlockModel> blocks = new ArrayList<>();
 
@@ -84,8 +85,9 @@ public class SimulatorGUI extends JFrame {
             }
         });
 
-        // Inside createInputPanel() method
         JButton resetButton = new JButton("Reset");
+        resetButton.setBackground(Color.RED);
+        resetButton.setForeground(Color.WHITE);
         resetButton.addActionListener(e -> {
 
             jobId = 1;
@@ -117,7 +119,7 @@ public class SimulatorGUI extends JFrame {
                 blockContainer.setMaximumSize(new Dimension(400, 50));
 
                 // Create size label (left side)
-                JLabel sizeLabel = new JLabel("Size: " + blockSize, SwingConstants.LEFT);
+                JLabel sizeLabel = new JLabel("<html>Block: "+blockModel.getBlockId()+"<br>Size: " +blockSize+"</html>", SwingConstants.LEFT);
                 sizeLabel.setPreferredSize(new Dimension(70, 50));
                 sizeLabel.setHorizontalAlignment(SwingConstants.LEFT);
 
@@ -190,6 +192,23 @@ public class SimulatorGUI extends JFrame {
             }
         });
 
+        JButton pauseButton = new JButton("Pause");
+        pauseButton.setBackground(Color.ORANGE);
+        pauseButton.setForeground(Color.WHITE);
+        pauseButton.addActionListener(e -> {
+            if (pauseButton.getText().equals("Pause")) {
+                AllocatorService.setIsStop(true);
+                pauseButton.setText("Resume");
+                pauseButton.setBackground(Color.BLUE);
+            } else if (pauseButton.getText().equals("Resume")) {
+                AllocatorService.setIsStop(false);
+                pauseButton.setText("Pause");
+                pauseButton.setBackground(Color.ORANGE);
+            }
+            pauseButton.revalidate();
+            pauseButton.repaint();
+        });
+
         // Layout for input panel
         GroupLayout layout = new GroupLayout(inputPanel);
         inputPanel.setLayout(layout);
@@ -207,7 +226,9 @@ public class SimulatorGUI extends JFrame {
                         .addGroup(layout.createSequentialGroup()
                                 .addComponent(insertButton)
                                 .addComponent(exampleJobsButton)
-                                .addComponent(resetButton))
+                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(pauseButton, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                                .addComponent(resetButton, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
                 )
         );
 
@@ -222,6 +243,7 @@ public class SimulatorGUI extends JFrame {
                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                         .addComponent(insertButton)
                         .addComponent(exampleJobsButton)
+                        .addComponent(pauseButton)
                         .addComponent(resetButton))
         );
 
@@ -267,6 +289,7 @@ public class SimulatorGUI extends JFrame {
 
         // Execute button
         JButton executeButton = new JButton("Execute Selected Job");
+        executeButton.setBackground(GREEN);
         executeButton.addActionListener(e -> {
             int selectedRow = jobTable.getSelectedRow(); // Get the selected row index
             if (selectedRow == -1) {
@@ -294,6 +317,8 @@ public class SimulatorGUI extends JFrame {
         });
 
         JButton executeAllButton = new JButton("Execute All Jobs");
+        executeAllButton.setBackground(GREEN2);
+        executeAllButton.setForeground(Color.WHITE);
         executeAllButton.addActionListener(e -> {
             try {
                 AllocatorService.allocateJob(jobs, blocks, tableModel, executionPanel, stackPanel);
@@ -304,6 +329,7 @@ public class SimulatorGUI extends JFrame {
 
         // Button panel to organize buttons
         JPanel buttonPanel = new JPanel(new BorderLayout());
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
         buttonPanel.add(executeButton, BorderLayout.WEST);
         buttonPanel.add(executeAllButton, BorderLayout.EAST);
 
@@ -348,7 +374,7 @@ public class SimulatorGUI extends JFrame {
             blockContainer.setMaximumSize(new Dimension(400, 50));
 
             // Create size label (left side)
-            JLabel sizeLabel = new JLabel("Size: " + blockSize, SwingConstants.LEFT);
+            JLabel sizeLabel = new JLabel("<html>Block: "+blockModel.getBlockId()+"<br>Size: " +blockSize+"</html>", SwingConstants.LEFT);
             sizeLabel.setPreferredSize(new Dimension(70, 50));
             sizeLabel.setHorizontalAlignment(SwingConstants.LEFT);
 
@@ -368,7 +394,7 @@ public class SimulatorGUI extends JFrame {
             progressBar.setValue(fillPercentage);
             progressBar.setStringPainted(true);
             progressBar.setBackground(Color.WHITE);
-            progressBar.setForeground(GREEN);
+            progressBar.setForeground(Color.GREEN);
             progressBar.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
             block.add(progressBar, BorderLayout.CENTER);
 
