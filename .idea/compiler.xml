@@ -9,8 +9,5 @@
         <module name="Memory-Allocation-Simulator" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="Memory-Allocation-Simulator" target="17" />
-    </bytecodeTargetLevel>
   </component>
 </project>
