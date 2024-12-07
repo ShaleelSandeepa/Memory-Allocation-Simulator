@@ -5,12 +5,12 @@ import memory.allocate.simulator.gui.SimulatorGUI;
 public class MainServer {
     public static void main(String[] args) {
         try {
-            System.out.println("Simulator Started");
+            System.out.println("Simulator is Started.");
             MainServer mainServer = new MainServer();
 
             mainServer.loadGUI();
 
-            System.out.println("Simulator Running...");
+            System.out.println("Simulator is Running...");
         } catch (Exception e) {
             e.printStackTrace();
         }
