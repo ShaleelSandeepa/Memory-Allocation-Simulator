@@ -48,6 +48,12 @@ public class SimulatorGUI extends JFrame {
         add(createMainContentPanel(), BorderLayout.CENTER);
 
         setVisible(true);
+        this.addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                System.out.println("Simulator is Stopped.");
+                System.exit(0);
+            }
+        });
     }
 
     private JPanel createInputPanel() {
