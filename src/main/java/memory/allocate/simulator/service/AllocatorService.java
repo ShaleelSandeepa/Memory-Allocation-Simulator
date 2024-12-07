@@ -16,30 +16,44 @@ public class AllocatorService {
     private static int availableSize;
     private static int progress;
     private static final Color GREEN = new Color(0, 210, 0);
+    private static boolean allocated;
+    private static int currentBlockIndex = 0; // Start with the first block
+
+    public static void resetCurrentBlockIndex(int index) {
+        currentBlockIndex = index;
+    }
 
     public static void allocateJob(List<JobModel> jobs, List<BlockModel> blocks,
                                    DefaultTableModel tableModel, JPanel executionPanel, JPanel stackPanel) throws InterruptedException {
         jobModelList = jobs;
         blockModelList = blocks;
 
-        if (jobModelList.isEmpty() || blockModelList.isEmpty()) {
-            setExecutionMessage(executionPanel, "No jobs or blocks available for allocation.");
+        if (jobModelList.isEmpty()) {
+            setExecutionMessage(executionPanel, "No jobs available for allocation.");
+            return;
+        } else if (blockModelList.isEmpty()) {
+            setExecutionMessage(executionPanel, "No blocks available for allocation.");
             return;
         }
 
         new Thread(() -> {
             try {
-                setExecutionMessage(executionPanel, "Simulation started !");
+                setExecutionMessage(executionPanel, "========== Simulation started ! ==========");
                 setExecutionMessage(executionPanel, "<html><br></html>");
-                int currentBlockIndex = 0; // Start with the first block
                 for (JobModel job : jobModelList) {
+                    //check job is completed
+                    String status = (String) tableModel.getValueAt(job.getJobId()-1, 3);
+                    if (status.equals("Completed ✅") || status.equals("Canceled ❌")) {
+                        job.setDone(true);
+                    }
                     if (!job.isDone()) {
-                        boolean allocated = false;
+                        allocated = false;
 
                         // Iterate through blocks, starting from the current index
                         for (int i = 0; i < blockModelList.size(); i++) {
                             BlockModel block = blockModelList.get(currentBlockIndex);
                             setExecutionMessage(executionPanel, "Checking if "+job.getJobName()+" is fits into the Block " + block.getBlockId()+"...");
+                            updateProgressBar(stackPanel, block, true); // Update border
 
                             // Check if the job fits into the block
                             if (!block.isFull() && (block.getSize() - block.getUsedSize() >= job.getSize())) {
@@ -52,7 +66,7 @@ public class AllocatorService {
                                 job.setBlockId(block.getBlockId()); // Assign block ID to job
                                 job.setDone(true); // Mark job as done
 
-                                setExecutionMessage(executionPanel, job.getJobName() + " allocated to " + block.getBlockId());
+                                setExecutionMessage(executionPanel, job.getJobName() + " allocated to Block " + block.getBlockId()+" ✅");
 
                                 // Check if the block is now full
                                 if (block.getSize() - block.getUsedSize() == 0) {
@@ -60,18 +74,20 @@ public class AllocatorService {
                                     setExecutionMessage(executionPanel, "Block "+block.getBlockId() + " is now full.");
                                 }
                                 setExecutionMessage(executionPanel, "<html><br></html>");
+                                updateProgressBar(stackPanel, block, false); // Update progress bar
 
-                                updateProgressBar(stackPanel, block); // Update progress bar
+                                allocated = true;
+
                                 // Update the table model to reflect the job is "Complete"
                                 SwingUtilities.invokeLater(() -> {
                                     for (int row = 0; row < tableModel.getRowCount(); row++) {
                                         if ((int) tableModel.getValueAt(row, 0) == job.getJobId()) {
-                                            tableModel.setValueAt("Completed", row, 3);
+                                            tableModel.setValueAt("Completed ✅", row, 3);
                                             break;
                                         }
                                     }
                                 });
-                                allocated = true;
+
                                 break;
                             }
 
@@ -80,16 +96,27 @@ public class AllocatorService {
                         }
 
                         if (!allocated) {
-                            setExecutionMessage(executionPanel, "Unable to allocate " + job.getJobName());
+                            setExecutionMessage(executionPanel, "Unable to allocate " + job.getJobName()+" ⚠️");
                             setExecutionMessage(executionPanel, "<html><br></html>");
+                            // Update the table model to reflect the job is "Complete"
+                            SwingUtilities.invokeLater(() -> {
+                                for (int row = 0; row < tableModel.getRowCount(); row++) {
+                                    if ((int) tableModel.getValueAt(row, 0) == job.getJobId()) {
+                                        tableModel.setValueAt("Canceled ❌", row, 3);
+                                        break;
+                                    }
+                                }
+                            });
                         }
                     }
                 }
-                setExecutionMessage(executionPanel, "Simulation stopped !");
+                setExecutionMessage(executionPanel, "========== Simulation stopped ! ==========");
+                setExecutionMessage(executionPanel, "<html><br></html>");
             } catch (InterruptedException ex) {
                 try {
                     setExecutionMessage(executionPanel, "<html><br></html>");
-                    setExecutionMessage(executionPanel, "Simulation stopped !");
+                    setExecutionMessage(executionPanel, "========== Simulation stopped ! ==========");
+                    setExecutionMessage(executionPanel, "<html><br></html>");
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
@@ -98,7 +125,7 @@ public class AllocatorService {
         }).start();
     }
 
-    private static synchronized void updateProgressBar(JPanel stackPanel, BlockModel blockModel) throws InterruptedException {
+    private static synchronized void updateProgressBar(JPanel stackPanel, BlockModel blockModel, boolean isBorder) throws InterruptedException {
 
         if (stackPanel != null) {
             for (Component component : stackPanel.getComponents()) {
@@ -106,10 +133,17 @@ public class AllocatorService {
                     for (Component component2 : ((JPanel) component).getComponents()) {
                         if (component2 instanceof JPanel) {
                             for (Component component3 : ((JPanel) component2).getComponents()) {
-                                if (component3 instanceof JProgressBar) {
+                                if (component3 instanceof JProgressBar progressBar) {
+                                    //update border
+                                    if (isBorder) {
+                                        if (!progressBar.getName().isEmpty()  && progressBar.getName().equals(String.valueOf(blockModel.getBlockId()))) {
+                                            progressBar.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 4));
+                                        } else {
+                                            progressBar.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+                                        }
+                                    }
                                     // Update progress bar value
-                                    JProgressBar progressBar = (JProgressBar) component3;
-                                    if (!progressBar.getName().isEmpty()  && progressBar.getName().equals(String.valueOf(blockModel.getBlockId()))) {
+                                    if (!progressBar.getName().isEmpty()  && progressBar.getName().equals(String.valueOf(blockModel.getBlockId())) && !isBorder) {
                                         id = progressBar.getName();
                                         availableSize = blockModel.getSize() - blockModel.getUsedSize();
                                         progress = (int) ((double) blockModel.getUsedSize() / blockModel.getSize() * 100);
@@ -123,19 +157,19 @@ public class AllocatorService {
                                 }
                             }
                         }
-                        if (component2 instanceof JLabel) {
+                        if (component2 instanceof JLabel statusLabel && !isBorder) {
                             // Update label status
-                            JLabel statusLabel = (JLabel) component2;
-                            if (statusLabel.getName() != null && !statusLabel.getName().isEmpty()  && statusLabel.getName().equals(id)) {
+                            if (statusLabel.getName() != null && !statusLabel.getName().isEmpty()  && statusLabel.getName().equals(String.valueOf(blockModel.getBlockId()))) {
 
                                 if (progress == 0) {
                                     statusLabel.setText("   Empty");
                                     statusLabel.setForeground(Color.BLUE);
                                 } else if (progress < 100) {
-                                    statusLabel.setText("<html>&nbsp;&nbsp;&nbsp;&nbsp;Allocated<br>&nbsp;&nbsp;&nbsp;&nbsp;[available: " + availableSize + "]</html>");
+                                    statusLabel.setText("<html>&nbsp;&nbsp;&nbsp;&nbsp;Allocated<br>&nbsp;&nbsp;&nbsp;&nbsp;Jobs: " + blockModel.getProcessIds() +
+                                            "<br>&nbsp;&nbsp;&nbsp;&nbsp;[available: " + availableSize + "]</html>");
                                     statusLabel.setForeground(GREEN); // Dark green
                                 } else if (progress == 100) {
-                                    statusLabel.setText("   Full");
+                                    statusLabel.setText("<html>&nbsp;&nbsp;&nbsp;&nbsp;Full<br>&nbsp;&nbsp;&nbsp;&nbsp;Jobs: "+blockModel.getProcessIds()+"</html>");
                                     statusLabel.setForeground(Color.RED);
                                 }
                                 break;

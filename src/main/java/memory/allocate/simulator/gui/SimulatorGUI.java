@@ -29,13 +29,14 @@ public class SimulatorGUI extends JFrame {
     JPanel stackPanel;
     JPanel mainContentPanel;
     JLabel statusLabel;
+    JTable jobTable;
 
     public SimulatorGUI() {
         initialize();
     }
 
     private void initialize() {
-        setTitle("Memory Allocation Simulator using NEXT-FIT Algorithm | Developed By Shaleel Sandeepa");
+        setTitle("Memory Allocation Simulator for NEXT-FIT Algorithm | Developed By Shaleel Sandeepa");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1200, 600);
         setLocationRelativeTo(null);
@@ -94,6 +95,7 @@ public class SimulatorGUI extends JFrame {
             tableModel.setRowCount(0);
             stackPanel.removeAll();
             blocks.clear();
+            AllocatorService.resetCurrentBlockIndex(0);
 
             // Reinitialize blocks
             blocks.add(new BlockModel(1, 128));
@@ -101,6 +103,8 @@ public class SimulatorGUI extends JFrame {
             blocks.add(new BlockModel(3, 512));
             blocks.add(new BlockModel(4, 256));
             blocks.add(new BlockModel(5, 1024));
+            blocks.add(new BlockModel(6, 256));
+            blocks.add(new BlockModel(7, 128));
 
             // Recreate the stack panel UI
             for (BlockModel blockModel : blocks) {
@@ -171,11 +175,15 @@ public class SimulatorGUI extends JFrame {
         exampleJobsButton.addActionListener(e -> {
             if (jobs.size() == 0) {
                 addJobToTable(new JobModel(jobId, 64, "job 1"));
-                addJobToTable(new JobModel(jobId, 64, "job 2"));
+                addJobToTable(new JobModel(jobId, 100, "job 2"));
                 addJobToTable(new JobModel(jobId, 12, "job 3"));
                 addJobToTable(new JobModel(jobId, 1024, "job 4"));
                 addJobToTable(new JobModel(jobId, 56, "job 5"));
                 addJobToTable(new JobModel(jobId, 256, "job 6"));
+                addJobToTable(new JobModel(jobId, 420, "job 7"));
+                addJobToTable(new JobModel(jobId, 128, "job 8"));
+                addJobToTable(new JobModel(jobId, 128, "job 9"));
+                addJobToTable(new JobModel(jobId, 100, "job 10"));
 
             } else {
                 JOptionPane.showMessageDialog(inputPanel, "Already added example jobs.", "Alert", JOptionPane.INFORMATION_MESSAGE);
@@ -238,7 +246,7 @@ public class SimulatorGUI extends JFrame {
 
         String[] columnNames = {"Job Id", "Name", "Size", "Status"};
         tableModel = new DefaultTableModel(columnNames, 0);
-        JTable jobTable = new JTable(tableModel);
+        jobTable = new JTable(tableModel);
 
         JScrollPane scrollPane = new JScrollPane(jobTable);
         tablePanel.add(scrollPane, BorderLayout.CENTER);
@@ -258,8 +266,35 @@ public class SimulatorGUI extends JFrame {
         JScrollPane scrollPane = new JScrollPane(executionPanel);
 
         // Execute button
-        JButton executeButton = new JButton("Execute All Jobs");
+        JButton executeButton = new JButton("Execute Selected Job");
         executeButton.addActionListener(e -> {
+            int selectedRow = jobTable.getSelectedRow(); // Get the selected row index
+            if (selectedRow == -1) {
+                // No row selected
+                JOptionPane.showMessageDialog(this, "Please select a job to execute.", "Selection Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            try {
+                // Retrieve job details from the selected row
+                int jobId = (int) tableModel.getValueAt(selectedRow, 0);
+                String jobName = (String) tableModel.getValueAt(selectedRow, 1);
+                int jobSize = (int) tableModel.getValueAt(selectedRow, 2);
+
+                // Create a new JobModel and add it to a list
+                List<JobModel> selectedJobList = new ArrayList<>();
+                selectedJobList.add(new JobModel(jobId, jobSize, jobName));
+
+                // Pass the selected job list to the allocation method
+                AllocatorService.allocateJob(selectedJobList, blocks, tableModel, executionPanel, stackPanel);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "An error occurred while executing the job.", "Execution Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        JButton executeAllButton = new JButton("Execute All Jobs");
+        executeAllButton.addActionListener(e -> {
             try {
                 AllocatorService.allocateJob(jobs, blocks, tableModel, executionPanel, stackPanel);
             } catch (InterruptedException ex) {
@@ -267,8 +302,13 @@ public class SimulatorGUI extends JFrame {
             }
         });
 
-        // Add button and scroll pane to outer panel
-        executionPanelOuter.add(executeButton, BorderLayout.NORTH);
+        // Button panel to organize buttons
+        JPanel buttonPanel = new JPanel(new BorderLayout());
+        buttonPanel.add(executeButton, BorderLayout.WEST);
+        buttonPanel.add(executeAllButton, BorderLayout.EAST);
+
+        // Add button panel and scroll pane to outer panel
+        executionPanelOuter.add(buttonPanel, BorderLayout.NORTH);
         executionPanelOuter.add(scrollPane, BorderLayout.CENTER);
 
         return executionPanelOuter;
@@ -286,6 +326,8 @@ public class SimulatorGUI extends JFrame {
         blocks.add(new BlockModel(3, 512));
         blocks.add(new BlockModel(4, 256));
         blocks.add(new BlockModel(5, 1024));
+        blocks.add(new BlockModel(6, 256));
+        blocks.add(new BlockModel(7, 128));
 
         for (BlockModel blockModel : blocks) {
             int blockSize = blockModel.getSize();
