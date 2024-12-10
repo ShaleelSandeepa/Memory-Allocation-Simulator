@@ -4,25 +4,27 @@ The primary goal of this project is to create a simulation that effectively demo
 
 Requirements
 
--- Functional requirements
+# Functional requirements
+-------------------------
 •	Able to insert jobs with name and size
 •	Able to execute jobs one by one and all jobs at once
 •	Support to pausing, resuming and resetting the simulator
 •	Should display memory block status and visualizations
 •	Should display execute process steps (logs)
 
--- Nonfunctional requirements
+# Nonfunctional requirements
+----------------------------
 •	Provide a responsive and user-friendly interface
 •	Ensure low memory usage for efficient simulation
 
--- Assumptions and Justifications
-
+# Assumptions and Justifications
+--------------------------------
 •	Each job requires memory in a block.
 •	There can be jobs that cannot allocate any memory block due to insufficient memory space in the blocks.
 •	Blocks have fixed sizes initialized during startup to simplify allocation logic.
 
--- Functionality and Features
-
+# Functionality and Features
+----------------------------
 •	Insert Job - Adds a new job with specified name and size
 •	Example jobs - Quickly populates the system with predefined jobs
 •	Pause/Resume - Temporarily halts or continues the simulation
