@@ -18,11 +18,17 @@ public class AllocatorService {
     private static final Color GREEN = new Color(0, 210, 0);
     private static boolean allocated;
     private static boolean isStop = false;
+    private static boolean isRunning = false;
     private static int currentBlockIndex = 0; // Start with the first block
     private static final Object lock = new Object();
 
     public static void resetCurrentBlockIndex(int index) {
         currentBlockIndex = index;
+        isRunning = false;
+    }
+
+    public static boolean getIsRunning() {
+        return isRunning;
     }
 
     public static void setIsStop(boolean isStopExecution) {
@@ -36,14 +42,17 @@ public class AllocatorService {
 
     public static void allocateJob(List<JobModel> jobs, List<BlockModel> blocks,
                                    DefaultTableModel tableModel, JPanel executionPanel, JPanel stackPanel) throws InterruptedException {
+        isRunning = true;
         jobModelList = jobs;
         blockModelList = blocks;
 
         if (jobModelList.isEmpty()) {
             setExecutionMessage(executionPanel, "No jobs available for allocation.");
+            isRunning = false;
             return;
         } else if (blockModelList.isEmpty()) {
             setExecutionMessage(executionPanel, "No blocks available for allocation.");
+            isRunning = false;
             return;
         }
 
@@ -54,6 +63,7 @@ public class AllocatorService {
                 for (JobModel job : jobModelList) {
                     synchronized (lock) {
                         while (isStop) {
+                            setExecutionMessage(executionPanel, "Execution paused!");
                             lock.wait(); // Pause thread when isStop is true
                         }
                     }
@@ -128,7 +138,9 @@ public class AllocatorService {
                 }
                 setExecutionMessage(executionPanel, "========== Simulation stopped ! ==========");
                 setExecutionMessage(executionPanel, "<html><br></html>");
+                isRunning = false;
             } catch (InterruptedException ex) {
+                isRunning = false;
                 try {
                     setExecutionMessage(executionPanel, "<html><br></html>");
                     setExecutionMessage(executionPanel, "========== Simulation stopped ! ==========");
@@ -203,7 +215,7 @@ public class AllocatorService {
         }
     }
 
-    private static void setExecutionMessage(JPanel executionPanel, String result) throws InterruptedException {
+    public static void setExecutionMessage(JPanel executionPanel, String result) throws InterruptedException {
         SwingUtilities.invokeLater(() -> {
             JLabel executionLabel = new JLabel(result);
             executionPanel.add(executionLabel);

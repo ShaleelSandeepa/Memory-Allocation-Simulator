@@ -202,17 +202,26 @@ public class SimulatorGUI extends JFrame {
         pauseButton.setBackground(Color.ORANGE);
         pauseButton.setForeground(Color.WHITE);
         pauseButton.addActionListener(e -> {
-            if (pauseButton.getText().equals("Pause")) {
-                AllocatorService.setIsStop(true);
-                pauseButton.setText("Resume");
-                pauseButton.setBackground(Color.BLUE);
-            } else if (pauseButton.getText().equals("Resume")) {
-                AllocatorService.setIsStop(false);
-                pauseButton.setText("Pause");
-                pauseButton.setBackground(Color.ORANGE);
+            try {
+                if (!AllocatorService.getIsRunning()) {
+                    JOptionPane.showMessageDialog(inputPanel, "No any executions running", "Alert", JOptionPane.INFORMATION_MESSAGE);
+                }
+                if (pauseButton.getText().equals("Pause") && AllocatorService.getIsRunning()) {
+                    AllocatorService.setExecutionMessage(executionPanel, "Please wait to pause");
+                    AllocatorService.setIsStop(true);
+                    pauseButton.setText("Resume");
+                    pauseButton.setBackground(Color.BLUE);
+                } else if (pauseButton.getText().equals("Resume")) {
+                    AllocatorService.setExecutionMessage(executionPanel, "Execution resumed!");
+                    AllocatorService.setIsStop(false);
+                    pauseButton.setText("Pause");
+                    pauseButton.setBackground(Color.ORANGE);
+                }
+                pauseButton.revalidate();
+                pauseButton.repaint();
+            } catch (Exception e1) {
+                System.out.println("Error while pause! " + e1.toString());
             }
-            pauseButton.revalidate();
-            pauseButton.repaint();
         });
 
         // Layout for input panel

@@ -5,8 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="fff38a73-3ea2-4294-abba-7318ab7e99ff" name="Changes" comment="finalized project">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/memory/allocate/simulator/gui/SimulatorGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/memory/allocate/simulator/gui/SimulatorGUI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/memory/allocate/simulator/service/AllocatorService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/memory/allocate/simulator/service/AllocatorService.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -60,6 +61,7 @@
       <option name="presentableId" value="Default" />
       <updated>1733599283389</updated>
       <workItem from="1733599286040" duration="1301000" />
+      <workItem from="1733920009886" duration="1032000" />
     </task>
     <task id="LOCAL-00001" summary="finalized project">
       <created>1733599883856</created>
@@ -84,6 +86,7 @@
         </entry>
       </map>
     </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="finalized project" />
