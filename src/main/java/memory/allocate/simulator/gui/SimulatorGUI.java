@@ -31,6 +31,7 @@ public class SimulatorGUI extends JFrame {
     JPanel mainContentPanel;
     JLabel statusLabel;
     JTable jobTable;
+    JButton pauseButton;
 
     public SimulatorGUI() {
         initialize();
@@ -96,6 +97,14 @@ public class SimulatorGUI extends JFrame {
         resetButton.setForeground(Color.WHITE);
         resetButton.addActionListener(e -> {
 
+            if (!AllocatorService.getIsPaused() && pauseButton.getText().equals("Pause") && AllocatorService.getIsRunning()) {
+                JOptionPane.showMessageDialog(inputPanel, "Please pause the simulator first", "Alert", JOptionPane.ERROR_MESSAGE);
+                return;
+            } else if (!AllocatorService.getIsPaused() && pauseButton.getText().equals("Resume") && AllocatorService.getIsRunning()) {
+                JOptionPane.showMessageDialog(inputPanel, "Please wait until pause the simulator", "Alert", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             jobId = 1;
             jobNameField.setText("");
             jobSizeField.setText("");
@@ -103,7 +112,13 @@ public class SimulatorGUI extends JFrame {
             tableModel.setRowCount(0);
             stackPanel.removeAll();
             blocks.clear();
+            pauseButton.setText("Pause");
+            pauseButton.setBackground(Color.ORANGE);
             AllocatorService.resetCurrentBlockIndex(0);
+            AllocatorService.setIsReset(true);
+            AllocatorService.setIsRunning(false);
+            AllocatorService.setIsStop(false);
+            AllocatorService.setIsPaused(false);
 
             // Reinitialize blocks
             blocks.add(new BlockModel(1, 128));
@@ -198,7 +213,7 @@ public class SimulatorGUI extends JFrame {
             }
         });
 
-        JButton pauseButton = new JButton("Pause");
+        pauseButton = new JButton("Pause");
         pauseButton.setBackground(Color.ORANGE);
         pauseButton.setForeground(Color.WHITE);
         pauseButton.addActionListener(e -> {
@@ -213,6 +228,7 @@ public class SimulatorGUI extends JFrame {
                     pauseButton.setBackground(Color.BLUE);
                 } else if (pauseButton.getText().equals("Resume")) {
                     AllocatorService.setExecutionMessage(executionPanel, "Execution resumed!");
+                    AllocatorService.setIsPaused(false);
                     AllocatorService.setIsStop(false);
                     pauseButton.setText("Pause");
                     pauseButton.setBackground(Color.ORANGE);

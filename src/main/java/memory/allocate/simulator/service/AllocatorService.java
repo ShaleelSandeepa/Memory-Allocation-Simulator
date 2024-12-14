@@ -18,17 +18,23 @@ public class AllocatorService {
     private static final Color GREEN = new Color(0, 210, 0);
     private static boolean allocated;
     private static boolean isStop = false;
+    private static boolean isReset = false;
     private static boolean isRunning = false;
+    private static boolean isPaused = false;
     private static int currentBlockIndex = 0; // Start with the first block
     private static final Object lock = new Object();
 
     public static void resetCurrentBlockIndex(int index) {
         currentBlockIndex = index;
-        isRunning = false;
+        setIsReset(true);
     }
 
-    public static boolean getIsRunning() {
-        return isRunning;
+    public static boolean getIsReset() {
+        return isReset;
+    }
+
+    public static void setIsReset(boolean bool) {
+        isReset = bool;
     }
 
     public static void setIsStop(boolean isStopExecution) {
@@ -40,19 +46,39 @@ public class AllocatorService {
         }
     }
 
+    public static boolean getIsStop() {
+        return isStop;
+    }
+
+    public static boolean getIsRunning() {
+        return isRunning;
+    }
+
+    public static void setIsRunning(boolean isRunning) {
+        AllocatorService.isRunning = isRunning;
+    }
+
+    public static boolean getIsPaused() {
+        return isPaused;
+    }
+
+    public static void setIsPaused(boolean isPaused) {
+        AllocatorService.isPaused = isPaused;
+    }
+
     public static void allocateJob(List<JobModel> jobs, List<BlockModel> blocks,
                                    DefaultTableModel tableModel, JPanel executionPanel, JPanel stackPanel) throws InterruptedException {
-        isRunning = true;
+        setIsRunning(true);
         jobModelList = jobs;
         blockModelList = blocks;
 
         if (jobModelList.isEmpty()) {
             setExecutionMessage(executionPanel, "No jobs available for allocation.");
-            isRunning = false;
+            setIsRunning(false);
             return;
         } else if (blockModelList.isEmpty()) {
             setExecutionMessage(executionPanel, "No blocks available for allocation.");
-            isRunning = false;
+            setIsRunning(false);
             return;
         }
 
@@ -60,87 +86,92 @@ public class AllocatorService {
             try {
                 setExecutionMessage(executionPanel, "========== Simulation started ! ==========");
                 setExecutionMessage(executionPanel, "<html><br></html>");
-                for (JobModel job : jobModelList) {
-                    synchronized (lock) {
-                        while (isStop) {
-                            setExecutionMessage(executionPanel, "Execution paused!");
-                            lock.wait(); // Pause thread when isStop is true
+                if (!jobModelList.isEmpty() && !blockModelList.isEmpty()) {
+                    for (JobModel job : jobModelList) {
+                        //pause thread
+                        setLock(executionPanel);
+                        //check job is completed
+                        if (jobModelList.isEmpty() || blockModelList.isEmpty()) {
+                            return;
                         }
-                    }
-                    //check job is completed
-                    String status = (String) tableModel.getValueAt(job.getJobId()-1, 3);
-                    if (status.equals("Completed ✅") || status.equals("Canceled ❌")) {
-                        job.setDone(true);
-                    }
-                    if (!job.isDone()) {
-                        allocated = false;
+                        String status = (String) tableModel.getValueAt(job.getJobId()-1, 3);
+                        if (status.equals("Completed ✅") || status.equals("Canceled ❌")) {
+                            job.setDone(true);
+                        }
+                        if (!job.isDone()) {
+                            allocated = false;
 
-                        // Iterate through blocks, starting from the current index
-                        for (int i = 0; i < blockModelList.size(); i++) {
-                            BlockModel block = blockModelList.get(currentBlockIndex);
-                            setExecutionMessage(executionPanel, "Checking if "+job.getJobName()+" is fits into the Block " + block.getBlockId()+"...");
-                            updateProgressBar(stackPanel, block, true); // Update border
-
-                            // Check if the job fits into the block
-                            if (!block.isFull() && (block.getSize() - block.getUsedSize() >= job.getSize())) {
-                                block.setUsedSize(block.getUsedSize() + job.getSize()); // Update block size
-
-                                List<Integer> newProcessIdList = block.getProcessIds();
-                                newProcessIdList.add(job.getJobId());
-                                block.setProcessIds(newProcessIdList);
-
-                                job.setBlockId(block.getBlockId()); // Assign block ID to job
-                                job.setDone(true); // Mark job as done
-
-                                setExecutionMessage(executionPanel, job.getJobName() + " allocated to Block " + block.getBlockId()+" ✅");
-
-                                // Check if the block is now full
-                                if (block.getSize() - block.getUsedSize() == 0) {
-                                    block.setFull(true);
-                                    setExecutionMessage(executionPanel, "Block "+block.getBlockId() + " is now full.");
+                            // Iterate through blocks, starting from the current index
+                            for (int i = 0; i < blockModelList.size(); i++) {
+                                setLock(executionPanel);
+                                if (jobModelList.isEmpty() || blockModelList.isEmpty()) {
+                                    return;
                                 }
+                                BlockModel block = blockModelList.get(currentBlockIndex);
+                                setExecutionMessage(executionPanel, "Checking if "+job.getJobName()+" is fits into the Block " + block.getBlockId()+"...");
+                                updateProgressBar(stackPanel, block, true); // Update border
+
+                                // Check if the job fits into the block
+                                if (!block.isFull() && (block.getSize() - block.getUsedSize() >= job.getSize())) {
+                                    block.setUsedSize(block.getUsedSize() + job.getSize()); // Update block size
+
+                                    List<Integer> newProcessIdList = block.getProcessIds();
+                                    newProcessIdList.add(job.getJobId());
+                                    block.setProcessIds(newProcessIdList);
+
+                                    job.setBlockId(block.getBlockId()); // Assign block ID to job
+                                    job.setDone(true); // Mark job as done
+
+                                    setExecutionMessage(executionPanel, job.getJobName() + " allocated to Block " + block.getBlockId()+" ✅");
+
+                                    // Check if the block is now full
+                                    if (block.getSize() - block.getUsedSize() == 0) {
+                                        block.setFull(true);
+                                        setExecutionMessage(executionPanel, "Block "+block.getBlockId() + " is now full.");
+                                    }
+                                    setExecutionMessage(executionPanel, "<html><br></html>");
+                                    updateProgressBar(stackPanel, block, false); // Update progress bar
+
+                                    allocated = true;
+
+                                    // Update the table model to reflect the job is "Complete"
+                                    SwingUtilities.invokeLater(() -> {
+                                        for (int row = 0; row < tableModel.getRowCount(); row++) {
+                                            if ((int) tableModel.getValueAt(row, 0) == job.getJobId()) {
+                                                tableModel.setValueAt("Completed ✅", row, 3);
+                                                break;
+                                            }
+                                        }
+                                    });
+
+                                    break;
+                                }
+
+                                // Move to the next block (circular iteration)
+                                currentBlockIndex = (currentBlockIndex + 1) % blockModelList.size();
+                            }
+
+                            if (!allocated) {
+                                setExecutionMessage(executionPanel, "Unable to allocate " + job.getJobName()+" ⚠️");
                                 setExecutionMessage(executionPanel, "<html><br></html>");
-                                updateProgressBar(stackPanel, block, false); // Update progress bar
-
-                                allocated = true;
-
                                 // Update the table model to reflect the job is "Complete"
                                 SwingUtilities.invokeLater(() -> {
                                     for (int row = 0; row < tableModel.getRowCount(); row++) {
                                         if ((int) tableModel.getValueAt(row, 0) == job.getJobId()) {
-                                            tableModel.setValueAt("Completed ✅", row, 3);
+                                            tableModel.setValueAt("Canceled ❌", row, 3);
                                             break;
                                         }
                                     }
                                 });
-
-                                break;
                             }
-
-                            // Move to the next block (circular iteration)
-                            currentBlockIndex = (currentBlockIndex + 1) % blockModelList.size();
-                        }
-
-                        if (!allocated) {
-                            setExecutionMessage(executionPanel, "Unable to allocate " + job.getJobName()+" ⚠️");
-                            setExecutionMessage(executionPanel, "<html><br></html>");
-                            // Update the table model to reflect the job is "Complete"
-                            SwingUtilities.invokeLater(() -> {
-                                for (int row = 0; row < tableModel.getRowCount(); row++) {
-                                    if ((int) tableModel.getValueAt(row, 0) == job.getJobId()) {
-                                        tableModel.setValueAt("Canceled ❌", row, 3);
-                                        break;
-                                    }
-                                }
-                            });
                         }
                     }
                 }
                 setExecutionMessage(executionPanel, "========== Simulation stopped ! ==========");
                 setExecutionMessage(executionPanel, "<html><br></html>");
-                isRunning = false;
+                setIsRunning(false);
             } catch (InterruptedException ex) {
-                isRunning = false;
+                setIsRunning(false);
                 try {
                     setExecutionMessage(executionPanel, "<html><br></html>");
                     setExecutionMessage(executionPanel, "========== Simulation stopped ! ==========");
@@ -212,6 +243,21 @@ public class AllocatorService {
             stackPanel.revalidate(); // Update layout
             stackPanel.repaint();    // Redraw the panel
             Thread.sleep(2000); // Simulate delay for progress update
+        }
+    }
+
+    private static void setLock(JPanel executionPanel) {
+        try {
+            synchronized (lock) {
+                while (isStop && getIsRunning()) {
+                    setExecutionMessage(executionPanel, "Execution paused!");
+                    setIsPaused(true);
+                    lock.wait(); // Pause thread when isStop is true
+                }
+
+            }
+        } catch (Exception e) {
+            System.out.println("Exception while locking the thread");
         }
     }
 
